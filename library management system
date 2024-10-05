@@ -1,0 +1,68 @@
+import mysql.connector
+
+conn = mysql.connector.connect(host="localhost", user="root", password="root", port="3306", database="library_management")
+curs = conn.cursor()
+
+class User:
+    def __init__(self):
+        self.Id = input("Enter your Id: ").strip()
+        self.name = input("Enter your name: ").strip()
+        curs.execute("SELECT * FROM members WHERE id=%s AND name=%s;", (self.Id, self.name))
+        if curs.fetchone():
+            print("\n====Logged in Successfully====\n")
+        else:
+            print("\nData not found. Try again.\n")
+            self.__init__()
+
+class Books:
+    def show_books(self):
+        curs.execute("SELECT * FROM books;")
+        for book in curs.fetchall():
+            print(book)
+
+    def add_book(self):
+        Id = input("ID: ").strip()
+        name = input("Name: ").strip()
+        author = input("Author: ").strip()
+        t_copies = input("Total copies: ").strip()
+        a_copies = input("Available copies: ").strip()
+        curs.execute("INSERT INTO books (book_id, book_name, author, Total_copies, available_copies) VALUES (%s, %s, %s, %s, %s);", 
+                     (Id, name, author, t_copies, a_copies))
+        conn.commit()
+        print("\n===> Inserted Successfully <===\n")
+
+    def manage_books(self):
+        action = input("Show or Add books (show/add): ").strip().lower()
+        if action == "show":
+            self.show_books()
+        elif action == "add":
+            self.add_book()
+
+class BookManagement(Books):
+    def __init__(self):
+        super().__init__()
+        action = input("\nReturn, Borrow, or Exit (return/borrow/exit): ").strip().lower()
+        if action == "return":
+            self.return_book()
+        elif action == "borrow":
+            self.borrow_book()
+
+    def return_book(self):
+        book_id = int(input("Enter book Id: "))
+        return_copies = int(input("Return books count: "))
+        curs.execute("UPDATE books SET available_copies = available_copies + %s WHERE book_id = %s;", (return_copies, book_id))
+        conn.commit()
+        print("\n===> Updated Successfully <===\n")
+
+    def borrow_book(self):
+        book_id = int(input("Enter book Id: "))
+        no_of_copies = int(input("Enter no. of copies: "))
+        curs.execute("UPDATE books SET available_copies = available_copies - %s WHERE book_id = %s;", (no_of_copies, book_id))
+        conn.commit()
+        print("\n===> Successfully Borrowed <===\n")
+
+# Main execution
+user = User()
+books = Books()
+books.manage_books()
+BookManagement()
